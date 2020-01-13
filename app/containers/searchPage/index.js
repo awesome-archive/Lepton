@@ -1,23 +1,25 @@
-'use strict'
-
-import React, { Component } from 'react'
-import { connect } from 'react-redux'
-import { Modal, ListGroupItem, ListGroup } from 'react-bootstrap'
-import {
-  selectGistTag,
-  selectGist,
-  fetchSingleGist,
-  updateSearchWindowStatus} from '../../actions/index'
 import { bindActionCreators } from 'redux'
-import { descriptionParser, addLangPrefix as Prefixed } from '../../utilities/parser'
+import { connect } from 'react-redux'
+import { Modal } from 'react-bootstrap'
+import { remote } from 'electron'
+import React, { Component } from 'react'
+import {
+  addLangPrefix as Prefixed,
+  descriptionParser,
+} from '../../utilities/parser'
+import {
+  fetchSingleGist,
+  selectGist,
+  selectGistTag,
+  updatescrollRequestStatus,
+  updateSearchWindowStatus,
+} from '../../actions'
 
 import './index.scss'
 
-import { remote, ipcRenderer } from 'electron'
 const logger = remote.getGlobal('logger')
 
 class SearchPage extends Component {
-
   constructor (props) {
     super(props)
     this.state = {
@@ -28,56 +30,75 @@ class SearchPage extends Component {
   }
 
   componentWillMount () {
-    ipcRenderer.on('key-up', this.selectPreGist.bind(this))
-    ipcRenderer.on('key-down', this.selectNextGist.bind(this))
-    ipcRenderer.on('key-enter', this.selectCurrentGist.bind(this))
-    ipcRenderer.on('key-escape', () => {
-      this.props.updateSearchWindowStatus('OFF')
-    })
-  }
-
-  componentWillUnmount () {
-    ipcRenderer.removeAllListeners('key-up')
-    ipcRenderer.removeAllListeners('key-down')
-    ipcRenderer.removeAllListeners('key-enter')
+    const { searchIndex } = this.props
+    searchIndex.initFuseSearch()
   }
 
   selectPreGist () {
-    let { selectedIndex, searchResults } = this.state
-    selectedIndex = selectedIndex - 1
-    if (!searchResults || selectedIndex < 0) {
-      selectedIndex = searchResults.length - 1
+    const { selectedIndex, searchResults } = this.state
+    let newSelectedIndex = selectedIndex - 1
+    if (!searchResults || newSelectedIndex < 0) {
+      newSelectedIndex = searchResults.length - 1
     }
     this.setState({
-      selectedIndex: selectedIndex,
+      selectedIndex: newSelectedIndex,
     })
+    this.refs[newSelectedIndex].scrollIntoView(false)
   }
 
   selectNextGist () {
-    let { selectedIndex, searchResults } = this.state
-    selectedIndex = selectedIndex + 1
-    if (!searchResults || selectedIndex >= searchResults.length) {
-      selectedIndex = 0
+    const { selectedIndex, searchResults } = this.state
+    let newSelectedIndex = selectedIndex + 1
+    if (!searchResults || newSelectedIndex >= searchResults.length) {
+      newSelectedIndex = 0
     }
     this.setState({
-      selectedIndex: selectedIndex,
+      selectedIndex: newSelectedIndex,
     })
+    this.refs[newSelectedIndex].scrollIntoView(false)
   }
 
   selectCurrentGist () {
-    let { selectedIndex, searchResults } = this.state
+    const { selectedIndex, searchResults } = this.state
     if (searchResults && searchResults.length > 0) {
-      this.handleSnippetClicked(searchResults[selectedIndex].ref)
+      this.handleSnippetClicked(searchResults[selectedIndex].id)
+    }
+  }
+
+  handleKeyDown (e) {
+    const { updateSearchWindowStatus } = this.props
+    if (e.keyCode === 40) { // Down
+      e.preventDefault()
+      this.selectNextGist()
+    } else if (e.keyCode === 38) { // Up
+      e.preventDefault()
+      this.selectPreGist()
+    } else if (e.keyCode === 13) { // Enter
+      e.preventDefault()
+      this.selectCurrentGist()
+    } else if (e.keyCode === 27) { // Esc
+      e.preventDefault()
+      updateSearchWindowStatus('OFF')
     }
   }
 
   handleSnippetClicked (gistId) {
-    let { gists, selectGistTag, selectGist, updateSearchWindowStatus, fetchSingleGist } = this.props
+    const {
+      gists,
+      selectGistTag,
+      selectGist,
+      updateSearchWindowStatus,
+      updatescrollRequestStatus,
+      fetchSingleGist } = this.props
 
     if (!gists[gistId].details) {
       logger.info('[Dispatch] fetchSingleGist ' + gistId)
       fetchSingleGist(gists[gistId], gistId)
     }
+
+    logger.info('[Dispatch] update scroll request to ON')
+    updatescrollRequestStatus('ON')
+
     logger.info('[Dispatch] selectGist ' + gistId)
     selectGist(gistId)
 
@@ -93,19 +114,19 @@ class SearchPage extends Component {
   }
 
   queryInputValue (evt) {
-    let inputValue = evt.target.value
+    const inputValue = evt.target.value
 
-    let searchIndex = this.props.searchIndex
-    let results = searchIndex.searchFromIndex(inputValue)
+    const searchIndex = this.props.searchIndex
+    const results = searchIndex.fuseSearch(inputValue)
     this.setState({
       searchResults: results
     })
   }
 
   renderSnippetDescription (rawDescription) {
-    let { title, description } = descriptionParser(rawDescription)
+    const { title, description } = descriptionParser(rawDescription)
 
-    let htmlForDescriptionSection = []
+    const htmlForDescriptionSection = []
     if (title.length > 0) {
       htmlForDescriptionSection.push(<div className='title-section' key='title'>{ title }</div>)
     }
@@ -119,10 +140,9 @@ class SearchPage extends Component {
   }
 
   renderSearchResults () {
-    let { searchResults, selectedIndex, inputValue } = this.state
-    let { gists } = this.props
+    const { searchResults, selectedIndex, inputValue } = this.state
 
-    // In some unknown circumstance, searchResults is undefined. So we put a
+    // FIXME: In some unknown circumstance, searchResults is undefined. So we put a
     // guard here. We should remove it once we better understand the mechanism
     // behind it.
     if (!inputValue || !searchResults) return null
@@ -135,26 +155,30 @@ class SearchPage extends Component {
       )
     }
 
-    let resultsJSXGroup = []
-    searchResults.forEach((item, index) => {
-      let gist = gists[item.ref]
-      let gistDescription = gist.brief.description
-      // let highlightedDescription = gistDescription.replace(inputValue, '**' + inputValue + '**')
-      let highlightedDescription = gistDescription
-      let langs = [...gist.langs].map(lang => {
-        return (
-          <div className='gist-tag' key={ lang }>{ '#' + lang }</div>
-        )
-      })
+    const resultsJSXGroup = []
+    searchResults.forEach((gist, index) => {
+      const highlightedDescription = gist.description
+      let filenames = []
+
+      // FIXME: In some rare cases, gist.filename is undefined in runtime for some unknown reason. So
+      // we place a guard here as a workaround.
+      if (gist.filename) {
+        filenames = gist.filename.split(',').filter(file => file.trim()).map(file => {
+          return (
+            <div className='gist-tag' key={ file.trim() }>{ file }</div>
+          )
+        })
+      }
       resultsJSXGroup.push(
-        <ListGroupItem
+        <li
           className={ index === selectedIndex
-              ? 'search-result-item-selected' : 'search-result-item' }
-          key={ item.ref }
-          onClick={ this.handleSnippetClicked.bind(this, item.ref) }>
+            ? 'search-result-item-selected' : 'search-result-item' }
+          key={ gist.id }
+          ref={ index }
+          onClick={ this.handleSnippetClicked.bind(this, gist.id) }>
           <div className='snippet-description'>{ this.renderSnippetDescription(highlightedDescription) }</div>
-          <div className='gist-tag-group'>{ langs }</div>
-        </ListGroupItem>
+          <div className='gist-tag-group'>{ filenames }</div>
+        </li>
       )
     })
     return resultsJSXGroup
@@ -166,15 +190,15 @@ class SearchPage extends Component {
         <input
           type="text"
           className='search-box'
-          placeholder='Search...'
+          placeholder='Search for description, tags, file names...'
           autoFocus
           value={ this.state.inputValue }
           onChange={ this.updateInputValue.bind(this) }
+          onKeyDown={ this.handleKeyDown.bind(this) }
           onKeyUp={ this.queryInputValue.bind(this) }/>
-        <div className='tip'>Navigation: Shift+Up/Down | Select: Shift+Enter</div>
-        <ListGroup className='result-group'>
+        <ul className='result-group'>
           { this.renderSearchResults() }
-        </ListGroup>
+        </ul>
       </div>
     )
   }
@@ -205,7 +229,8 @@ function mapDispatchToProps (dispatch) {
     selectGistTag: selectGistTag,
     selectGist: selectGist,
     fetchSingleGist: fetchSingleGist,
-    updateSearchWindowStatus: updateSearchWindowStatus
+    updateSearchWindowStatus: updateSearchWindowStatus,
+    updatescrollRequestStatus: updatescrollRequestStatus
   }, dispatch)
 }
 

@@ -1,86 +1,96 @@
-'use strict'
-
-import React, { Component } from 'react'
-import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { Image, Modal, ProgressBar } from 'react-bootstrap'
-import GistEditorForm from '../gistEditorForm'
-import { NEW_GIST } from '../gistEditorForm'
+import { connect } from 'react-redux'
+import { default as GistEditorForm, NEW_GIST } from '../gistEditorForm'
+import { Image, Modal, Button, ProgressBar } from 'react-bootstrap'
+import { remote, ipcRenderer } from 'electron'
 import HumanReadableTime from 'human-readable-time'
 import Notifier from '../../utilities/notifier'
-import './index.scss'
+import React, { Component } from 'react'
 import {
   addLangPrefix as Prefixed,
+  descriptionParser,
   parseCustomTags,
-  descriptionParser } from '../../utilities/parser'
-
+} from '../../utilities/parser'
 import {
-  removeAccessToken,
   logoutUserSession,
-  updateSingleGist,
-  updateGistTags,
+  removeAccessToken,
+  selectGist,
   selectGistTag,
-  selectGist } from '../../actions/index'
-
+  updateGistNewModeStatus,
+  updateGistTags,
+  updateLogoutModalStatus,
+  updateSingleGist,
+} from '../../actions/index'
 import {
+  CREATE_SINGLE_GIST,
   getGitHubApi,
-  CREATE_SINGLE_GIST
 } from '../../utilities/githubApi'
 
-import { shell, remote, ipcRenderer } from 'electron'
+import './index.scss'
+
+import dojocatImage from '../../utilities/octodex/dojocat.jpg'
+import logoutIcon from './logout.svg'
+import newIcon from './new.svg'
+import privateinvestocatImage from '../../utilities/octodex/privateinvestocat.jpg'
+import syncIcon from './sync.svg'
+
+const conf = remote.getGlobal('conf')
 const logger = remote.getGlobal('logger')
 
-class UserPanel extends Component {
-
-  constructor (props) {
-    super(props)
-    this.state = {
-      showGistEditorModal: false
-    }
+let defaultImage = dojocatImage
+if (conf.get('enterprise:enable')) {
+  defaultImage = privateinvestocatImage
+  if (conf.get('enterprise:avatarUrl')) {
+    defaultImage = conf.get('enterprise:avatarUrl')
   }
+}
 
-  componentWillMount () {
-    ipcRenderer.on('new-gist', () => {
+const kIsPrivate = conf.get('snippet:newSnippetPrivate')
+const hideProfilePhoto = conf.get('userPanel:hideProfilePhoto')
+
+class UserPanel extends Component {
+  componentDidMount () {
+    ipcRenderer.on('new-gist-renderer', () => {
       this.handleNewGistClicked()
+    })
+    ipcRenderer.on('exit-editor', () => {
+      this.closeGistEditorModal()
+    })
+    ipcRenderer.on('sync-gists', () => {
+      this.handleSyncClicked()
     })
   }
 
   componentWillUnmount () {
-    ipcRenderer.removeAllListeners('new-gist')
-  }
-
-  closeGistEditorModal () {
-    this.setState({
-      showGistEditorModal: false
-    })
+    ipcRenderer.removeAllListeners('new-gist-renderer')
   }
 
   handleCreateSingleGist (data) {
-    let isPublic = data.private === undefined ? true : !data.private
-    let description = data.description
-    let processedFiles = {}
+    const isPublic = data.private === undefined ? true : !data.private
+    const description = data.description.trim()
+    const processedFiles = {}
 
     data.gistFiles.forEach((file) => {
-      processedFiles[file.filename] = {
+      processedFiles[file.filename.trim()] = {
         content: file.content
       }
     })
 
-    getGitHubApi(CREATE_SINGLE_GIST)(this.props.accessToken, description, processedFiles, isPublic)
-    .catch((err) => {
-      Notifier('Gist creation failed')
-      logger.error(JSON.stringify(err))
-    })
-    .then((response) => {
-      this.updateGistsStoreWithNewGist(response)
-    })
-    .finally(() => {
-      this.closeGistEditorModal()
-    })
+    return getGitHubApi(CREATE_SINGLE_GIST)(this.props.accessToken, description, processedFiles, isPublic)
+      .catch((err) => {
+        Notifier('Gist creation failed')
+        logger.error(JSON.stringify(err))
+      })
+      .then((response) => {
+        this.updateGistsStoreWithNewGist(response)
+      })
+      .finally(() => {
+        this.closeGistEditorModal()
+      })
   }
 
   updateGistsStoreWithNewGist (gistDetails) {
-    let {
+    const {
       gistTags,
       updateSingleGist,
       updateGistTags,
@@ -88,16 +98,20 @@ class UserPanel extends Component {
       selectGist,
       searchIndex } = this.props
 
-    let gistId = gistDetails.id
-    let files = gistDetails.files
+    const gistId = gistDetails.id
+    const files = gistDetails.files
 
     // update the language tags
-    let langs = new Set()
+    const langs = new Set()
+    let filenameRecords = ''
+
     gistTags[Prefixed('All')].unshift(gistId)
     Object.keys(files).forEach(filename => {
-      let language = files[filename].language || 'Other'
+      // leave a space in between to help tokenization
+      filenameRecords += ', ' + filename
+      const language = files[filename].language || 'Other'
       langs.add(language)
-      let prefixedLang = Prefixed(language)
+      const prefixedLang = Prefixed(language)
       if (gistTags.hasOwnProperty(prefixedLang)) {
         gistTags[prefixedLang].unshift(gistId)
       } else {
@@ -107,7 +121,7 @@ class UserPanel extends Component {
     })
 
     // update the custom tags
-    let customTags = parseCustomTags(descriptionParser(gistDetails.description).customTags)
+    const customTags = parseCustomTags(descriptionParser(gistDetails.description).customTags)
     customTags.forEach(tag => {
       if (gistTags.hasOwnProperty(tag)) {
         gistTags[tag].unshift(gistDetails.id)
@@ -117,7 +131,7 @@ class UserPanel extends Component {
       }
     })
 
-    let newGist = {}
+    const newGist = {}
     newGist[gistId] = {
       langs: langs,
       brief: gistDetails,
@@ -137,29 +151,32 @@ class UserPanel extends Component {
 
     let langSearchRecords = ''
     langs.forEach(lang => {
-      langSearchRecords += ' ' + lang
+      langSearchRecords += ',' + lang
     })
 
     // update the search index
-    searchIndex.addToIndex({
+    searchIndex.addToFuseIndex({
       id: gistId,
       description: gistDetails.description,
-      language: langSearchRecords
+      language: langSearchRecords,
+      filename: filenameRecords
     })
 
     Notifier('Gist created', HumanReadableTime(new Date()))
   }
 
   renderGistEditorModalBody () {
-    let initialData = {
+    const initialData = {
       description: '',
+      private: kIsPrivate,
       gists: [
-          {filename: '', content: ''}
-      ]}
+        { filename: '', content: '' }
+      ] }
     return (
       <GistEditorForm
         initialData={ initialData }
         formStyle={ NEW_GIST }
+        handleCancel = { this.closeGistEditorModal.bind(this) }
         onSubmit={ this.handleCreateSingleGist.bind(this) }></GistEditorForm>
     )
   }
@@ -167,12 +184,15 @@ class UserPanel extends Component {
   renderGistEditorModal () {
     return (
       <Modal
-        bsSize="large"
-        dialogClassName="new-modal"
-        show={ this.state.showGistEditorModal }
+        bsSize='large'
+        dialogClassName='new-modal'
+        animation={ false }
+        backdrop='static'
+        keyboard={ false }
+        show={ this.props.gistNewModalStatus === 'ON' }
         onHide={ this.closeGistEditorModal.bind(this)}>
         <Modal.Header closeButton>
-          <Modal.Title>New Gist</Modal.Title>
+          <Modal.Title>New</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           { this.renderGistEditorModalBody.bind(this)() }
@@ -186,21 +206,30 @@ class UserPanel extends Component {
       <div>
         { this.renderGistEditorModal() }
         <a href='#'
-          className='customized-tag'
+          className='user-panel-button'
           onClick={ this.handleLogoutClicked.bind(this) }>
-          #logout
-        </a>
-        <br/><br/>
-        <a href='#'
-          className='customized-tag'
-          onClick={ this.handleNewGistClicked.bind(this) }>
-          #new
+          <div
+            className='user-panel-icon'
+            dangerouslySetInnerHTML={{ __html: logoutIcon }} />
+          <span>Logout</span>
         </a>
         <br/>
         <a href='#'
-          className='customized-tag'
+          className='user-panel-button'
+          onClick={ this.handleNewGistClicked.bind(this) }>
+          <div
+            className='user-panel-icon'
+            dangerouslySetInnerHTML={{ __html: newIcon }} />
+          <span>New</span>
+        </a>
+        <br/>
+        <a href='#'
+          className='user-panel-button'
           onClick={ this.handleSyncClicked.bind(this) }>
-          #sync
+          <div
+            className='user-panel-icon'
+            dangerouslySetInnerHTML={{ __html: syncIcon }} />
+          <span>Sync</span>
         </a>
         <div className='customized-tag-small'>{ this.props.syncTime }</div>
       </div>
@@ -208,7 +237,28 @@ class UserPanel extends Component {
   }
 
   handleLogoutClicked () {
+    this.props.updateLogoutModalStatus('ON')
+  }
+
+  handleNewGistClicked () {
+    this.props.updateGistNewModeStatus('ON')
+  }
+
+  closeGistEditorModal () {
+    this.props.updateGistNewModeStatus('OFF')
+  }
+
+  handleSyncClicked () {
+    this.props.reSyncUserGists()
+  }
+
+  handleLogoutModalCancelClicked () {
+    this.props.updateLogoutModalStatus('OFF')
+  }
+
+  handleLogoutModalConfirmClicked () {
     logger.info('[Dispatch] logoutUserSession')
+    this.props.updateLogoutModalStatus('OFF')
     this.props.logoutUserSession()
     this.props.updateLocalStorage({
       token: null,
@@ -216,32 +266,52 @@ class UserPanel extends Component {
       image: null
     })
     removeAccessToken()
-  }
-
-  handleNewGistClicked () {
-    this.setState({
-      showGistEditorModal: true
-    })
-  }
-
-  handleSyncClicked () {
-    this.props.reSyncUserGists()
-  }
-
-  handleProfileImageClicked () {
-    logger.debug('profile image is clicked!! ' + this.props.userSession.profile.html_url)
-    shell.openExternal(this.props.userSession.profile.html_url)
+    remote.getCurrentWindow().setTitle('Lepton') // update the app title
   }
 
   renderProfile () {
-    let profile = this.props.userSession.profile
-    if (!profile || this.props.userSession.activeStatus === 'INACTIVE') {
+    const { profile, activeStatus } = this.props.userSession
+    if (hideProfilePhoto || !profile || activeStatus === 'INACTIVE') {
       return
+    }
+
+    let avatarUrl = profile.avatar_url
+    if (conf.get('enterprise:enable')) {
+      avatarUrl = defaultImage
     }
 
     return (
       <div>
-        <Image className='profile-image-section' src={ profile.avatar_url } onClick={ this.handleProfileImageClicked.bind(this) } rounded/>
+        <figure className="sticker-img">
+          <Image
+            className='profile-image-section'
+            src={ avatarUrl }/>
+          <div>
+            <div className='profile-username-section'>
+              <h5><span>{ this.props.userSession.profile.login }</span></h5>
+            </div>
+            <div className="curl"></div>
+            <a href={ this.props.userSession.profile.html_url }></a>
+          </div>
+        </figure>
+      </div>
+    )
+  }
+
+  renderLogoutConfirmationModal () {
+    return (
+      <div className='static-modal'>
+        <Modal show={ this.props.logoutModalStatus === 'ON' } bsSize='small'>
+          <Modal.Header>
+            <Modal.Title>Confirm logout?</Modal.Title>
+          </Modal.Header>
+          <Modal.Footer>
+            <Button onClick={ this.handleLogoutModalCancelClicked.bind(this) }>cancel</Button>
+            <Button
+              bsStyle='danger'
+              onClick={ this.handleLogoutModalConfirmClicked.bind(this) }>logout</Button>
+          </Modal.Footer>
+        </Modal>
       </div>
     )
   }
@@ -252,10 +322,11 @@ class UserPanel extends Component {
         <div>
           { this.renderProfile() }
           { this.props.gistSyncStatus === 'IN_PROGRESS'
-              ? <ProgressBar className='resync-progress-bar' active now={ 100 }/>
-              : null }
+            ? <ProgressBar className='resync-progress-bar' active now={ 100 }/>
+            : null }
         </div>
         { this.renderInSection() }
+        { this.renderLogoutConfirmationModal() }
       </div>
     )
   }
@@ -267,7 +338,9 @@ function mapStateToProps (state) {
     syncTime: state.syncTime,
     accessToken: state.accessToken,
     gistTags: state.gistTags,
-    gistSyncStatus: state.gistSyncStatus
+    gistSyncStatus: state.gistSyncStatus,
+    logoutModalStatus: state.logoutModalStatus,
+    gistNewModalStatus: state.gistNewModalStatus
   }
 }
 
@@ -277,7 +350,9 @@ function mapDispatchToProps (dispatch) {
     updateSingleGist: updateSingleGist,
     updateGistTags: updateGistTags,
     selectGistTag: selectGistTag,
-    selectGist: selectGist
+    selectGist: selectGist,
+    updateGistNewModeStatus: updateGistNewModeStatus,
+    updateLogoutModalStatus: updateLogoutModalStatus
   }, dispatch)
 }
 

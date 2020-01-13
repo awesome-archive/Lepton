@@ -1,52 +1,70 @@
-.panel-details {
-  margin: 5px;
-  float: left;
-  width: 200px;
-  overflow: auto;
-  height: 95vh;
-  background: rgba(0,0,0,0.015);
-  border-radius: 5px;
+.panel-thumbnails-background {
+  height: 100vh;
+  position: relative;
 }
 
-.panel-details {
+.panel-thumbnails-scroll {
+  float: left;
+  width: 100%;
+  overflow-y: overlay;
+  height: 100%;
+  visibility: visible;
+}
+
+// With .panel-thumbnails-scroll visible, this block is not needed
+//
+// .panel-thumbnails-content,
+// .panel-thumbnails-scroll:hover {
+//   visibility: visible;
+// }
+
+.panel-thumbnails-scroll {
 
   .font-style-base {
-    font-family: Consolas, Menlo, Monaco, "Courier New", monospace;
-    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI, Ubuntu, Droid Sans, sans-serif;
+    font-size: 15px;
   }
 
-  .list-group-item:first-child {
+  ul {
+    padding-left: 0px;
+  }
+
+  ul:first-child {
     border-top-left-radius: 0px;
     border-top-right-radius: 0px;
   }
 
-  .list-group-item:last-child {
+  ul:last-child {
     border-bottom-left-radius: 0px;
     border-bottom-right-radius: 0px;
+    // border-bottom: solid 1px var(--border-color);
   }
 
   .snippet-thumnail-list-item {
     padding: 0 !important;
     border-right-width: 0 !important;
     border-left-width: 0 !important;
+    border-bottom: solid 1px var(--border-color);
+    background: var(--bg-primary);
+    cursor: pointer;
   }
 
   .snippet-thumnail-list-item:hover {
-    background-color: #F9F9F9;
-    cursor: pointer;
+    background-color: var(--bg-secondary);
   }
 
   .snippet-thumnail {
     @extend .font-style-base;
-    margin: 5px;
+    padding: 6px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .active-snippet-thumnail-base {
     @extend .font-style-base;
-    padding: 5px;
-    background: rgb(237, 237, 237);
+    padding: 6px;
+    font-weight: 500;
+    background: var(--bg-secondary);
   }
 
   .active-snippet-thumnail-public {

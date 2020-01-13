@@ -22,12 +22,25 @@
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
 
+    <!-- Place this tag in your head or just before your close body tag. -->
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-92052347-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      
+      gtag('config', 'UA-92052347-1');
+    </script>
 
 </head>
 
@@ -75,14 +88,16 @@
                     <img class="img-responsive screenshot-logo" src="img/portfolio/stay_organized.png" alt="">
                     <div class="intro-text">
                         <span class="name">Lepton</span>
-                        <!-- <hr class="star-light"> -->
+                        <a class="github-button" href="https://github.com/hackjutsu/Lepton" data-icon="octicon-star" data-style="mega" data-count-href="/hackjutsu/Lepton/stargazers" data-count-api="/repos/hackjutsu/Lepton#stargazers_count" data-count-aria-label="# stargazers on GitHub" aria-label="Star hackjutsu/Lepton on GitHub">Star</a>
+                        <a class="github-button" href="https://github.com/hackjutsu" data-style="mega" aria-label="Follow @hackjutsu on GitHub">Follow @hackjutsu</a>                        <!-- <hr class="star-light"> -->
                         <div class="skills typewriter">A Lean <b>GitHub Gist</b> Client</div>
                         <img class="img-logo" src="img/logo.png" alt="">
                         <div class="col-lg-8 col-lg-offset-2 text-center">
                             <a href="https://github.com/hackjutsu/Lepton/releases" class="btn btn-lg btn-outline">
                                 <i class="fa fa-download"></i> Download
                             </a>
-                            <div class="platforms"> #macOS / #Windows / #Linux </div>
+                            <div class="platforms"> #macOS / #Win / #Linux </div>
+                            <!-- Place this tag where you want the button to render. -->
                         </div>
                     </div>
                 </div>
@@ -109,7 +124,7 @@
                         </div>
                         <center>
                            <img src="img/portfolio/stay_organized.png" class="img-responsive" alt="">
-                           <span class="feature-title">Stay Organized</span>
+                           <span class="feature-title">Organized</span>
                         </center>
                     </a>
                 </div>
@@ -122,7 +137,7 @@
                         </div>
                         <center>
                            <img src="img/portfolio/markdown.png" class="img-responsive" alt="">
-                           <span class="feature-title">Markdown Rendering</span>
+                           <span class="feature-title">Markdown</span>
                         </center>
                     </a>
                 </div>
@@ -135,7 +150,7 @@
                         </div>
                         <center>
                            <img src="img/portfolio/search_bar.png" class="img-responsive" alt="">
-                           <span class="feature-title">Instant Search</span>
+                           <span class="feature-title">Search (⇧ + Space)</span>
                         </center>
                     </a>
                 </div>
@@ -149,6 +164,32 @@
                         <center>
                            <img src="img/portfolio/edit.png" class="img-responsive" alt="">
                            <span class="feature-title">Custom Tags</span>
+                        </center>
+                    </a>
+                </div>
+                <div class="col-sm-3 portfolio-item">
+                    <a href="#portfolioModal5" class="portfolio-link" data-toggle="modal">
+                        <div class="caption">
+                            <div class="caption-content">
+                                <i class="fa fa-search-plus fa-3x"></i>
+                            </div>
+                        </div>
+                        <center>
+                           <img src="img/portfolio/immersive.png" class="img-responsive" alt="">
+                           <span class="feature-title">Immersive Mode (⌘ + i)</span>
+                        </center>
+                    </a>
+                </div>
+                <div class="col-sm-3 portfolio-item">
+                    <a href="#portfolioModal6" class="portfolio-link" data-toggle="modal">
+                        <div class="caption">
+                            <div class="caption-content">
+                                <i class="fa fa-search-plus fa-3x"></i>
+                            </div>
+                        </div>
+                        <center>
+                           <img src="img/portfolio/dashboard.png" class="img-responsive" alt="">
+                           <span class="feature-title">Dashboard (⌘ + d)</span>
                         </center>
                     </a>
                 </div>
@@ -178,17 +219,9 @@
                         </div>
                     </li>
                     <li class='faq-item'>
-                        <div class="faq-question">Why I can't search my gist's content?</div>
-                        <div class="faq-answer">
-                            Currently, <b>Lepton</b> only supports the whole word search for the gist's description field.
-                        </div>
-                    </li>
-                    <li class='faq-item'>
                         <div class="faq-question">How to specify the title and tags for my gist?</div>
                         <div class="faq-answer">
-                            GitHub Gist doesn't come with the native support for 'title' and 'tag' in the description field.
-                            <br/><br/>
-                            <b>Lepton</b> adds these support, if the format <code>[title] description #tags: tag1 tag2</code> is followed in the gist description field.
+                            Follow the format <code>[title] description #tag1 #tag2</code> in the description field.
                             <center>
                                 <div class="faq-img">
                                     <img class="img-responsive img-centered" src="./img/formatted_description2.png"/>
@@ -200,9 +233,9 @@
                         </div>
                     </li>
                     <li class='faq-item'>
-                        <div class="faq-question">How to provide feedback?</div>
+                        <div class="faq-question">Feedback?</div>
                         <div class="faq-answer">
-                           Please submit an issue ticket in the <a class="faq-link" href="https://github.com/hackjutsu/Lepton/issues">GitHub Issue</a> page. Or, if you like, send a <a class="faq-link" href="https://github.com/hackjutsu/Lepton/pulls">pull request</a>.
+                           <a class="faq-link" href="https://github.com/hackjutsu/Lepton/issues">GitHub Issue</a>.
                         </div>
                     </li>
                 </ul>
@@ -234,7 +267,7 @@
             <div class="container">
                 <div class="row">
                     <div class="col-lg-12">
-                        Copyright &copy; Lepton 2017
+                        Copyright &copy; Lepton 2017-2019
                     </div>
                 </div>
             </div>
@@ -323,9 +356,6 @@
                             <p>
                                 Instant search for your gists (<b>"Shift + Space"</b>).
                             </p>
-                            <div class="faq-note">
-                                Currently, only the description field will be searched. For better accuracy,  you can specify custom tags. Please refer to FAQ for how to specify tags.
-                            </div>
                             <br/>
                             <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Close</button>
                         </div>
@@ -350,9 +380,6 @@
                             <hr class="star-primary">
                             <img src="img/portfolio/edit.png" class="img-responsive img-centered" alt="">
                             <p>Tag your gists!</p>
-                            <div class="faq-note">
-                                Note: Tags should be separated by comma ' , '
-                            </div>
                             <br/>
                             <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Close</button>
                         </div>
@@ -361,6 +388,60 @@
             </div>
         </div>
       </div>
+    </div>
+    <div class="portfolio-modal modal fade" id="portfolioModal5" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-content">
+            <div class="close-modal" data-dismiss="modal">
+                <div class="lr">
+                    <div class="rl">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 col-lg-offset-0">
+                        <div class="modal-body">
+                            <h2>Immersive Mode</h2>
+                            <hr class="star-primary">
+                            <img src="img/portfolio/immersive.png" class="img-responsive img-centered" alt="">
+                            <p>Get focused!</p>
+                            <div class="faq-note">
+                                Command/Ctrl + i
+                            </div>
+                            <br/>
+                            <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="portfolio-modal modal fade" id="portfolioModal6" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-content">
+            <div class="close-modal" data-dismiss="modal">
+                <div class="lr">
+                    <div class="rl">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 col-lg-offset-0">
+                        <div class="modal-body">
+                            <h2>Dashboard</h2>
+                            <hr class="star-primary">
+                            <img src="img/portfolio/dashboard.png" class="img-responsive img-centered" alt="">
+                            <p>Discover your potential!</p>
+                            <div class="faq-note">
+                                Command/Ctrl + d
+                            </div>
+                            <br/>
+                            <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- jQuery -->

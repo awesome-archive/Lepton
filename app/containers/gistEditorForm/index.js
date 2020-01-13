@@ -1,13 +1,25 @@
+import { connect } from 'react-redux'
+import { Field, FieldArray, reduxForm, formValueSelector } from 'redux-form'
+import { ipcRenderer } from 'electron'
+import { OverlayTrigger, Tooltip, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap'
+import GistEditor from '../gistEditor'
 import React, { Component } from 'react'
-import { Field, FieldArray, reduxForm } from 'redux-form'
-import { Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap'
+import validFilename from 'valid-filename'
+
+import tipsIcon from './ei-question.svg'
 
 import './index.scss'
 
 export const NEW_GIST = 'NEW_GIST'
 export const UPDATE_GIST = 'UPDATE_GIST'
 
-class GistEditorForm extends Component {
+const descriptionTips = '[title] description #tag1 #tag2'
+
+const tooltip = (
+  <Tooltip id='tooltip'>{ descriptionTips }</Tooltip>
+)
+
+class GistEditorFormImpl extends Component {
   componentWillMount () {
     const { change, initialData } = this.props
     // Initialize the form
@@ -16,8 +28,24 @@ class GistEditorForm extends Component {
     initialData.gists && change('gistFiles', initialData.gists)
   }
 
+  componentDidMount () {
+    ipcRenderer.on('submit-gist', () => {
+      this.shortcutSubmit()
+    })
+  }
+
+  componentWillUnmount () {
+    ipcRenderer.removeAllListeners('submit-gist')
+  }
+
+  shortcutSubmit () {
+    // https://github.com/erikras/redux-form/issues/1304
+    const submitter = this.props.handleSubmit(this.props.onSubmit)
+    submitter() // submits
+  }
+
   render () {
-    const { handleSubmit, submitting, formStyle } = this.props
+    const { handleSubmit, handleCancel, submitting, formStyle, filenameList } = this.props
 
     return (
       <form className='gist-editor-form' onSubmit={ handleSubmit }>
@@ -25,19 +53,27 @@ class GistEditorForm extends Component {
           name='description'
           type='text'
           component={ renderDescriptionField }
-          validate={ required }/>
+          validate={ valideNotEmptyContent }/>
         <FieldArray
           name='gistFiles'
           formStyle={ formStyle }
+          filenameList={ filenameList }
           component={ renderGistFiles }/>
         <hr/>
         <div className='control-button-group'>
           <Button
             className='gist-editor-control-button'
             type='submit'
-            bsStyle='success'
+            bsStyle='default'
             disabled={ submitting }>
             Submit
+          </Button>
+          <Button
+            className='gist-editor-control-button'
+            onClick={ handleCancel }
+            bsStyle='default'
+            disabled={ submitting }>
+              Cancel
           </Button>
         </div>
       </form>
@@ -45,7 +81,12 @@ class GistEditorForm extends Component {
   }
 }
 
-const required = value => value ? undefined : 'required'
+const valideNotEmptyContent = value => value ? null : 'required'
+
+const validateFilename = value => {
+  if (!value) return 'required'
+  else if (!validFilename(value)) return 'invalid filename'
+}
 
 const renderTitleInputField = ({ input, placeholder, type, meta: { touched, error, warning } }) => (
   <div className='title-input-field'>
@@ -56,20 +97,31 @@ const renderTitleInputField = ({ input, placeholder, type, meta: { touched, erro
 )
 
 const renderDescriptionField = ({ input, type, meta: { touched, error, warning } }) => (
-  <div className='gist-editor-section'>
+  <div className='gist-editor-section gist-editor-name'>
     <input
       className='gist-editor-input-area'
       { ...input }
       type={ type }
-      placeholder='Gist description...'/>
-      { touched && ((error && <span className='error-msg'>{ error }</span>) ||
+      placeholder={ descriptionTips }/>
+    { touched && ((error && <span className='error-msg'>{ error }</span>) ||
         (warning && <span className='error-msg'>{ warning }</span>)) }
+    <OverlayTrigger placement="top" overlay={ tooltip }>
+      <a className='tips' href='#'>
+        <div
+          className='tips-icon'
+          dangerouslySetInnerHTML={{ __html: tipsIcon }} />
+        <span>tips</span>
+      </a>
+    </OverlayTrigger>
   </div>
 )
 
-const renderContentField = ({ input, type, placeholder, meta: { touched, error, warning } }) => (
+const renderContentField = ({ input, type, meta: { touched, error, warning }, filename }) => (
   <div>
-    <textarea className='gist-editor-content-area' { ...input } type={ type } placeholder={ placeholder }/>
+    <GistEditor
+      filename={ filename }
+      { ...input }
+      type={ type }/>
     { touched && ((error && <span className='error-msg'>{error}</span>) ||
       (warning && <span className='error-msg'>{warning}</span>)) }
   </div>
@@ -77,29 +129,33 @@ const renderContentField = ({ input, type, placeholder, meta: { touched, error, 
 
 function renderGistFileHeader (member, fields, index) {
   return (
-      <div>
-        <Field
-          name={ `${member}.filename` }
-          type='text'
-          component={ renderTitleInputField }
-          placeholder='File name... (e.g. snippet.js)'
-          validate={ required }/>
-        <a href='#'
-          className={ index === 0 ? 'gist-editor-customized-tag-hidden' : 'gist-editor-customized-tag' }
-          onClick={ () => fields.remove(index) }>#remove</a>
-      </div>
+    <div>
+      <Field
+        name={ `${member}.filename` }
+        type='text'
+        component={ renderTitleInputField }
+        placeholder='file name... (e.g. snippet.js)'
+        validate={ validateFilename }/>
+      <a href='#'
+        className={ fields.length === 1 ? 'gist-editor-customized-tag-hidden' : 'gist-editor-customized-tag' }
+        onClick={ () => fields.remove(index) }>#remove</a>
+    </div>
   )
 }
 
-const renderGistFiles = ({ fields, formStyle }) => (
+const renderGistFiles = ({ fields, formStyle, filenameList }) => (
   <ListGroup className='gist-editor-section'>
     { fields.map((member, index) =>
       <ListGroupItem className='gist-editor-gist-file' key={index}>
-        <Panel header={ renderGistFileHeader(member, fields, index) }>
-          <Field name={ `${member}.content` }
-            type='text'
-            component={ renderContentField }
-            validate={ required }/>
+        <Panel>
+          <Panel.Heading>{ renderGistFileHeader(member, fields, index) }</Panel.Heading>
+          <Panel.Body>
+            <Field name={ `${member}.content` }
+              type='text'
+              filename={ filenameList && filenameList[index] }
+              component={ renderContentField }
+              validate={ valideNotEmptyContent }/>
+          </Panel.Body>
         </Panel>
       </ListGroupItem>
     ) }
@@ -116,6 +172,18 @@ const renderGistFiles = ({ fields, formStyle }) => (
     </div>
   </ListGroup>
 )
+
+const selector = formValueSelector('gistEditorForm')
+const GistEditorForm = connect(
+  state => {
+    const gistFiles = selector(state, 'gistFiles')
+    const filenameList = gistFiles && gistFiles.map(({ filename }) =>
+      filename)
+    return {
+      filenameList
+    }
+  }
+)(GistEditorFormImpl)
 
 export default reduxForm({
   form: 'gistEditorForm'

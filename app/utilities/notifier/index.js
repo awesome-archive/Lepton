@@ -1,10 +1,15 @@
-'use strict'
+import { remote } from 'electron'
 
-export default function (title, message='') {
+const conf = remote.getGlobal('conf')
+
+export default function (title, message = '') {
   let option = {
     title: title,
     body: message,
     silent: true
   }
-  new Notification(option.title, option)
+
+  if (!conf.get('disableNotification')) {
+    new Notification(option.title, option)
+  }
 }

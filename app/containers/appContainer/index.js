@@ -1,94 +1,160 @@
-'use strict'
-
-import React, { Component } from 'react'
-import { shell } from 'electron'
+import { Alert } from 'react-bootstrap'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
-import { Alert } from 'react-bootstrap'
-import NavigationPanelDetails from '../navigationPanelDetails'
-import NavigationPanel from '../navigationPanel'
+import { remote, shell } from 'electron'
+import { updateUpdateAvailableBarStatus } from '../../actions/index'
+import AboutPage from '../aboutPage'
+import Dashboard from '../dashboard'
+import electronLocalStorage from 'electron-json-storage-sync'
 import LoginPage from '../loginPage'
-import SnippetTable from '../snippetTable'
+import NavigationPanel from '../navigationPanel'
+import NavigationPanelDetails from '../navigationPanelDetails'
+import React, { Component } from 'react'
 import SearchPage from '../searchPage'
+import SnippetPanel from '../snippetPanel'
+import SplitPane from 'react-split-pane'
+import ThemeManager from '../../utilities/themeManager'
+
 import './index.scss'
 
-import { updateUpdateAvailableBarStatus } from '../../actions/index'
+const conf = remote.getGlobal('conf')
+const themeManager = new ThemeManager()
+themeManager.setTheme(conf.get('theme'))
 
 class AppContainer extends Component {
-
-  renderSearchPage () {
-    if (this.props.searchWindowStatus === 'OFF') return null
+  renderAboutPage () {
+    const { updateAboutModalStatus } = this.props
     return (
-      <SearchPage searchIndex = { this.props.searchIndex } />
+      <AboutPage updateAboutModalStatus = { updateAboutModalStatus }/>
     )
   }
 
-  dismissAlert () {
-    this.props.updateUpdateAvailableBarStatus('OFF')
+  renderDashboard () {
+    const { updateDashboardStatus } = this.props
+    return (
+      <Dashboard updateDashboardStatus = { updateDashboardStatus }/>
+    )
+  }
+
+  renderSearchPage () {
+    const { searchWindowStatus, searchIndex } = this.props
+    return (
+      <div>
+        { searchWindowStatus === 'OFF'
+          ? null
+          : <SearchPage searchIndex = { searchIndex } /> }
+      </div>
+    )
+  }
+
+  dismissUpdateAlert () {
+    const { updateUpdateAvailableBarStatus } = this.props
+    updateUpdateAvailableBarStatus('OFF')
   }
 
   handleDownloadClicked () {
-    shell.openExternal(this.props.newVersionInfo.url)
-    this.dismissAlert()
+    const { newVersionInfo } = this.props
+    shell.openExternal(newVersionInfo.url)
+    this.dismissUpdateAlert()
   }
 
   handleReleaseNotesClicked () {
     shell.openExternal('https://github.com/hackjutsu/Lepton/releases')
-    this.dismissAlert()
+    this.dismissUpdateAlert()
   }
 
   handleSkipClicked () {
-    localStorage.setItem('skipped-version', this.props.newVersionInfo.version)
-    this.dismissAlert()
+    const { newVersionInfo } = this.props
+    electronLocalStorage.set('skipped-version', newVersionInfo.version)
+    this.dismissUpdateAlert()
+  }
+
+  renderUpdateAlert () {
+    const { updateAvailableBarStatus, newVersionInfo } = this.props
+    return (
+      <div>
+        { updateAvailableBarStatus === 'ON'
+          ? <Alert bsStyle='warning' onDismiss={ this.dismissUpdateAlert.bind(this) }>
+            { `New version ${newVersionInfo.version} is available!  ` }
+            <a className='customized-button' onClick={ this.handleSkipClicked.bind(this) }>#skip</a>
+            { newVersionInfo.url
+              ? <a className='customized-button' onClick={ this.handleReleaseNotesClicked.bind(this) }>#release</a>
+              : <a className='customized-button' onClick={ this.handleReleaseNotesClicked.bind(this) }>#download</a> }
+            { newVersionInfo.url
+              ? <a className='customized-button' onClick={ this.handleDownloadClicked.bind(this) }>#download</a>
+              : null }
+          </Alert>
+          : null }
+      </div>
+    )
+  }
+
+  renderActiveNormalSection () {
+    const {
+      updateLocalStorage,
+      updateActiveGistAfterClicked,
+      reSyncUserGists,
+      localPref,
+      searchIndex } = this.props
+
+    return (
+      <div>
+        { this.renderAboutPage() }
+        { this.renderDashboard() }
+        { this.renderSearchPage() }
+        { this.renderUpdateAlert() }
+        <NavigationPanel
+          localPref = { localPref }
+          searchIndex = { searchIndex }
+          updateLocalStorage = { updateLocalStorage }
+          updateActiveGistAfterClicked = { updateActiveGistAfterClicked }
+          reSyncUserGists = { reSyncUserGists } />
+        <SplitPane split='vertical' minSize={180} maxSize={300} defaultSize={230}>
+          <NavigationPanelDetails />
+          <SnippetPanel
+            searchIndex = { searchIndex }
+            reSyncUserGists = { reSyncUserGists } />
+        </SplitPane>
+      </div>
+    )
+  }
+
+  renderActiveImmersiveSection () {
+    const { searchIndex, reSyncUserGists } = this.props
+    return (
+      <SnippetPanel
+        searchIndex = { searchIndex }
+        reSyncUserGists = { reSyncUserGists } />
+    )
+  }
+
+  renderActiveSection () {
+    const { immersiveMode } = this.props
+    return (
+      <div>
+        { immersiveMode === 'ON'
+          ? this.renderActiveImmersiveSection()
+          : this.renderActiveNormalSection() }
+      </div>
+    )
+  }
+
+  renderInactiveSection () {
+    const { loggedInUserInfo, launchAuthWindow } = this.props
+    return (
+      <LoginPage
+        loggedInUserInfo = { loggedInUserInfo }
+        launchAuthWindow = { launchAuthWindow } />
+    )
   }
 
   render () {
-    let {
-        userSession,
-        getLoggedInUserInfo,
-        launchAuthWindow,
-        updateLocalStorage,
-        updateActiveGistAfterClicked,
-        reSyncUserGists,
-        searchWindowStatus,
-        updateAvailableBarStatus,
-        searchIndex,
-        newVersionInfo } = this.props
-
-    if (userSession.activeStatus === 'ACTIVE') {
-      return (
-        <div className='app-container'>
-          { this.renderSearchPage() }
-          { updateAvailableBarStatus === 'ON'
-              ? <Alert bsStyle="warning" onDismiss={ this.dismissAlert.bind(this) }>
-                  { `New version ${newVersionInfo.version} is available!  ` }
-                  <a className='customized-button' onClick={ this.handleSkipClicked.bind(this) }>#skip</a>
-                  { newVersionInfo.url
-                    ? <a className='customized-button' onClick={ this.handleReleaseNotesClicked.bind(this) }>#release</a>
-                    : <a className='customized-button' onClick={ this.handleReleaseNotesClicked.bind(this) }>#download</a> }
-                  { newVersionInfo.url
-                    ? <a className='customized-button' onClick={ this.handleDownloadClicked.bind(this) }>#download</a>
-                    : null }
-                </Alert>
-              : null }
-          <NavigationPanel
-            searchIndex = { searchIndex }
-            updateLocalStorage = { updateLocalStorage }
-            updateActiveGistAfterClicked = { updateActiveGistAfterClicked }
-            reSyncUserGists = { reSyncUserGists } />
-          <NavigationPanelDetails />
-          <SnippetTable
-            searchIndex = { searchIndex }
-            reSyncUserGists = { reSyncUserGists } />
-        </div>
-      )
-    }
-
+    const { userSession } = this.props
     return (
       <div className='app-container'>
-        <LoginPage
-          getLoggedInUserInfo = { getLoggedInUserInfo }
-          launchAuthWindow = { launchAuthWindow }/>
+        { userSession.activeStatus === 'ACTIVE'
+          ? this.renderActiveSection()
+          : this.renderInactiveSection() }
       </div>
     )
   }
@@ -98,8 +164,11 @@ function mapStateToProps (state) {
   return {
     userSession: state.userSession,
     searchWindowStatus: state.searchWindowStatus,
+    aboutModalStatus: state.aboutModalStatus,
+    dashboardModalStatus: state.dashboardModalStatus,
     newVersionInfo: state.newVersionInfo,
-    updateAvailableBarStatus: state.updateAvailableBarStatus
+    updateAvailableBarStatus: state.updateAvailableBarStatus,
+    immersiveMode: state.immersiveMode
   }
 }
 

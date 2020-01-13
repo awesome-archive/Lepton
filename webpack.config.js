@@ -1,4 +1,4 @@
-'use strict'
+
 
 const path = require('path')
 const webpack = require('webpack')
@@ -8,7 +8,7 @@ module.exports = {
   entry: [
     './app/index.js'
   ],
-  target: 'electron',
+  target: 'electron-renderer',
   output: {
     path: path.resolve(__dirname, 'bundle'),
     publicPath: '/bundle/',
@@ -24,16 +24,13 @@ module.exports = {
         presets: [
           ['es2015',  { "modules": false }],
           'react'
-        ]
+        ],
+        plugins: ['syntax-dynamic-import']
       }
     }, {
       test: /\.(scss|css)$/,
       loaders: ['style-loader', 'css-loader', 'sass-loader']
     }, {
-      test: /\.json/,
-	  // exclude: /node_modules/,
-	  loader: 'json-loader'
-	}, {
       test: /\.(png|jpg)$/,
       loader: 'url-loader'
     }, {
@@ -53,7 +50,7 @@ module.exports = {
       loader: 'file-loader'
     }, {
       test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
-      loader: 'url-loader?limit=10000&mimetype=image/svg+xml'
+      loader: 'raw-loader'
     }]
   },
   externals: [nodeExternals({

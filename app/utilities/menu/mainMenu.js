@@ -1,5 +1,3 @@
-'use strict'
-
 const electron = require('electron')
 const app = electron.app
 
@@ -39,13 +37,13 @@ const template = [
   {
     label: 'View',
     submenu: [
-      {
-        label: 'Reload',
-        accelerator: 'CmdOrCtrl+R',
-        click (item, focusedWindow) {
-          if (focusedWindow) focusedWindow.reload()
-        }
-      },
+      // {
+      //   label: 'Reload',
+      //   accelerator: 'CmdOrCtrl+R',
+      //   click (item, focusedWindow) {
+      //     if (focusedWindow) focusedWindow.reload()
+      //   }
+      // },
       {
         label: 'Toggle Developer Tools',
         accelerator: process.platform === 'darwin' ? 'Alt+Command+I' : 'Ctrl+Shift+I',
@@ -60,7 +58,8 @@ const template = [
         role: 'resetzoom'
       },
       {
-        role: 'zoomin'
+        role: 'zoomin',
+        accelerator: 'CmdOrCtrl+='
       },
       {
         role: 'zoomout'

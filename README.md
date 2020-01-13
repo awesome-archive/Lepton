@@ -1,48 +1,95 @@
-# Lepton
 
-![Screenshot](./docs/img/portfolio/stay_organized.png)
-
-|      Organize         |   Search (*Shift + Space*) |
-| :-------------:| :-----:|
-| ![Screenshot](./docs/img/portfolio/stay_organized.png) | ![Screenshot](./docs/img/portfolio/search_bar.png) |
-
-|      Markdown Renderding         |   Custom Tags    |
-| :-------------:| :-----:|
-| ![Screenshot](./docs/img/portfolio/markdown.png) | ![Screenshot](./docs/img/portfolio/edit.png) |
-
-
-**Lepton** is a lean [GitHub Gist](https://gist.github.com/) Desktop Client based on Electron.
-- Group your gists by languages
-- Create/Edit/Delete gists
-- Instant search
-- Custom tags
-- Markdown rendering
-- Cross-platform support
+![](./docs/img/new_logo.png)
 
 [![Build Status](https://travis-ci.org/hackjutsu/Lepton.svg?branch=master)](https://travis-ci.org/hackjutsu/Lepton)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
 [![Dependency Status](https://david-dm.org/hackjutsu/Lepton.svg?style=flat-square)](https://david-dm.org/hackjutsu/Lepton)
+[![Join the community on Spectrum](https://withspectrum.github.io/badge/badge.svg)](https://spectrum.chat/Lepton)
 [![MIT Licensed](https://img.shields.io/badge/License-MIT-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
 
-## Based on
-![Based on](./docs_resource/erb-logo.png)
+
+**Lepton** is a lean code snippet manager based on *GitHub Gist*. [Check out its latest release.](https://github.com/hackjutsu/Lepton/releases)
+
+- Unlimited public/private snippets
+- Unlimited tags
+- Language groups
+- Markdown/JupyterNotebook support
+- GitHub Enterprise support
+- Immersive mode
+- Customizable
+- Light/Dark theme
+- macOS/Win/Linux
+- Dashboard
+- Search
+- Proxy
+- Free
+
+![Screenshot](./docs/img/portfolio/stay_organized.png)
+
+| [Light Theme](https://github.com/hackjutsu/Lepton#cutomization)     | [Dark Theme](https://github.com/hackjutsu/Lepton#cutomization)    |
+| :-------------:| :-----:|
+|![Screenshot](./docs/img/portfolio/lepton-light.png)|![Screenshot](./docs/img/portfolio/lepton-dark.png)|
+
+|      Organize         |  Markdown | Jupyter Notebook |
+| :-------------:| :-----:| :-----: |
+| ![Screenshot](./docs/img/portfolio/stay_organized.png) | ![Screenshot](./docs/img/portfolio/markdown.png) | ![Screenshot](./docs/img/portfolio/jupyterNotebook.png)
+
+|      Search (*⇧ + Space*)         |    Immersive Mode *(⌘/Ctrl + i)*    | Dashboard *(⌘/Ctrl + d)* |
+| :-------------:| :-----:| :-----: |
+| ![Screenshot](./docs/img/portfolio/search_bar.png) | ![Screenshot](./docs/img/portfolio/immersive.png) | ![Screenshot](./docs/img/portfolio/dashboard.png)
+
+
+## Shortcuts
+| Function       | Shortcut       |  Note     |
+| :------------: |:-------------: |:-----:|
+| New Snippet    | `Cmd/Ctrl + N` | Create a snippet      |
+| Edit Snippet   | `Cmd/Ctrl + E` | Edit a snippet      |
+| Submit         | `Cmd/Ctrl + S` | Submit the changes from the editor      |
+| Cancel         | `Cmd/Ctrl + ESC` | Exit the editor without saving   |
+| Sync           | `Cmd/Ctrl + R` | Sync with remote Gist server   |
+| Immersive Mode | `Cmd/Ctrl + I` |  Toggle the [Immersive mode](https://github.com/hackjutsu/Lepton/blob/master/docs/img/portfolio/immersive.png)    |
+| Dashboard      | `Cmd/Ctrl + D` |  Toggle the [dashboard](https://github.com/hackjutsu/Lepton/blob/master/docs/img/portfolio/dashboard.png)     |
+| About Page     | `Cmd/Ctrl + ,` |  Toggle the [About page](https://github.com/hackjutsu/Lepton/blob/dev/docs/img/portfolio/about.png)    |
+| Search         | `Shift + Space`|  Toggle the [search bar](https://github.com/hackjutsu/Lepton/blob/master/docs/img/portfolio/search_bar.png)    |
+
+## Customization
+Lepton's features can be customized by `<home_dir>/.leptonrc`! (Create the file if it does not exist.)
+
+- Theme (light/dark)
+- Snippet
+- Editor
+- Logger
+- Proxy
+- Enterprise
+
+Check out the [.leptonrc template](https://gist.github.com/1ad7e4968eb64d881ec9dedd6c0f400b) to explore different customization options.
+
+## Tech Stack
+![Based on](./docs/img/erb-logo.png)
 
 1. Framework: [Electron](http://electron.atom.io/)
 2. Bundler: [Webpack](http://webpack.github.io/docs/), [Babel](https://babeljs.io), [electron-builder](https://github.com/electron-userland/electron-builder)
-3. Language: [ES2015](https://babeljs.io/docs/learn-es2015/), [Sass](http://sass-lang.com/)
+3. Language: [ES6](https://babeljs.io/docs/learn-es2015/), [Sass](http://sass-lang.com/)
 4. Library: [React](https://facebook.github.io/react/), [Redux](https://github.com/reactjs/redux), [Redux Thunk](https://github.com/gaearon/redux-thunk), [Redux Form](http://redux-form.com/)
 5. Lint: [ESLint](http://eslint.org/)
+
+## Installation
+- Download released binaries(macOS/Windows/Linux) [here](https://github.com/hackjutsu/Lepton/releases).
+- Install via Homebrew (macOS)
+```bash
+brew cask install lepton
+```
+- Install via SnapCraft (Linux)
+
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-white.svg)](https://snapcraft.io/lepton)
 
 ## Development
 
 
-### Install
-Clone the repository.
-```Bash
-$ git clone git@github.com:hackjutsu/Lepton.git
-```
-Install the dependencies.
+### Install dependencies
+
 ```bash
+$ git clone git@github.com:hackjutsu/Lepton.git
 $ cd Lepton && npm i
 ```
 
@@ -57,32 +104,69 @@ module.exports = {
 
 ### Run
 ```bash
-$ npm run pack
-$ npm run start
+$ npm run build && npm run start
 ```
 
 ## Build Installer App
->Read [electron-builder docs](https://github.com/electron-userland/electron-builder#readme) and checkout [Code Signing](https://github.com/electron-userland/electron-builder#code-signing) before building the installer app.
+>Read [electron-builder docs](https://github.com/electron-userland/electron-builder#readme) and check out the [code signing wiki](https://github.com/electron-userland/electron-builder#code-signing) before building the installer app.
 
-Build app for macOS.
+Build apps for macOS.
 ```bash
 $ npm run dist -- -m
 ```
-Build app for Windows.
+Build apps for Windows.
 ```bash
 $ npm run dist -- -w
 ```
-Build app for Linux.
+Build apps for Linux. 
+
+>Need a running [Docker](https://www.docker.com/) daemon to build a `snap` package.
 ```bash
 $ npm run dist -- -l
 ```
-Build app for macOS, Windows and Linux.
+Build apps for macOS, Windows and Linux.
 ```bash
 $ npm run dist -- -wml
 ```
-Build app for the current OS with the current arch.
+Build apps for the current OS with the current arch.
 ```bash
 $ npm run dist
 ```
+
+## FAQ
+[--> Wiki FAQ](https://github.com/hackjutsu/Lepton/wiki/FAQ)
+
+## Contributors
+<table id="contributors">
+   <tr>
+      <td><img src=https://avatars1.githubusercontent.com/u/7756581?v=3><a href="https://github.com/hackjutsu">hackjutsu</a></td>
+      <td><img src=https://avatars1.githubusercontent.com/u/5550402?v=3><a href="https://github.com/wujysh">wujysh</a></td>
+      <td><img src=https://avatars2.githubusercontent.com/u/14959483?v=3><a href="https://github.com/DNLHC">DNLHC</a></td>
+      <td><img src=https://avatars2.githubusercontent.com/u/13786673?v=3><a href="https://github.com/meilinz">meilinz</a></td>
+      <td><img src=https://avatars3.githubusercontent.com/u/5697293?v=3><a href="https://github.com/lcgforever">lcgforever</a></td>
+      <td><img src=https://avatars1.githubusercontent.com/u/180032?v=3><a href="https://github.com/Calinou">Calinou</a></td>
+   </tr>
+   <tr>
+      <td><img src=https://avatars0.githubusercontent.com/u/7173984?v=3><a href="https://github.com/rogersachan">rogersachan</a></td>
+      <td><img src=https://avatars3.githubusercontent.com/u/2075566?v=3><a href="https://github.com/passerbyid">passerbyid</a></td>
+      <td><img src=https://avatars2.githubusercontent.com/u/12994810?v=3><a href="https://github.com/YYSU">YYSU</a></td>
+      <td><img src=https://avatars3.githubusercontent.com/u/26782336?v=3><a href="https://github.com/cixuuz">cixuuz</a></td>
+      <td><img src=https://avatars2.githubusercontent.com/u/4332224?v=3><a href="https://github.com/Gisonrg">Gisonrg</a></td>
+      <td><img src=https://avatars2.githubusercontent.com/u/7821318?v=3><a href="https://github.com/ArLEquiN64">ArLEquiN64</a></td>
+   </tr>
+   <tr>
+      <td><img src=https://avatars1.githubusercontent.com/u/1841272?v=3><a href="https://github.com/popey">popey</a></td>
+      <td><img src=https://avatars2.githubusercontent.com/u/6280136?v=3><a href="https://github.com/tonyxu-io">tonyxu-io</a></td>
+      <td><img src=https://avatars3.githubusercontent.com/u/13814048?v=3><a href="https://github.com/rawrmonstar">rawrmonstar</a></td>
+      <td><img src=https://avatars2.githubusercontent.com/u/965804?v=3><a href="https://github.com/baybatu">baybatu</a></td>
+      <td><img src=https://avatars2.githubusercontent.com/u/22477950?v=3><a href="https://github.com/samuelmeuli">samuelmeuli</a></td>
+      <td><img src=https://avatars0.githubusercontent.com/u/8838135?v=3><a href="https://github.com/anthonyattard">anthonyattard</a></td>
+   </tr>
+      <tr>
+      <td><img src=https://avatars1.githubusercontent.com/u/5918765?v=3><a href="https://github.com/alexandreamadocastro">lexandreamadocastro</a></td>
+      <td><img src=https://avatars2.githubusercontent.com/u/1998649?v=3><a href="https://github.com/abnersajr">abnersajr</a></td>
+   </tr>
+</table>
+
 ## License
 MIT © [hackjutsu](https://github.com/hackjutsu)
